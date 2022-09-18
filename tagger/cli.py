@@ -1,18 +1,48 @@
+import os
+
 import click
 from tagger.server import _run_server
 
-from tagger.definitions import REPO_ROOT_DIR
-from tagger.utils import file_exists
+from tagger.definitions import REPO_ROOT_DIR, TAGGER_ROOT_DIR, DEFAULT_DB_NAME
 from tagger.models import _load_database, _create_database
 from tagger.models.handler import DatabaseHandler
+from tagger.server import app
+from tagger.utils import (
+    file_exists,
+    folder_exists,
+    create_init_config,
+    create_directory,
+    create_project as _create_project
+)
 
 
-DEFAULT_DB_NAME = "tagr.db"
 
 
 @click.group()
 def cli():
     pass
+
+
+@cli.command()
+def init():
+    """Initialise a tagger project"""
+    if folder_exists(f"{REPO_ROOT_DIR}/{TAGGER_ROOT_DIR}"):
+        click.secho("tagger has already been instantiated", fg="red")
+    else:
+        click.secho("Instantiating tagger...🚀", fg="green")
+        os.mkdir(f"{REPO_ROOT_DIR}/{TAGGER_ROOT_DIR}")
+        create_init_config(f"{REPO_ROOT_DIR}/{TAGGER_ROOT_DIR}")
+        create_directory(f"{REPO_ROOT_DIR}/{TAGGER_ROOT_DIR}/projects")
+        click.secho("Successfully instantiated ✅ - run `tagger --help` for available commands")
+
+
+@cli.command()
+@click.option("--project-name", required=True, type=str, help="Name of your new tagging project.")
+@click.option("--project-description", required=False, type=str, help="Description of the project.")
+def create_project(project_name: str, project_description: str = ""):
+    """Create a new tagging project"""
+    click.secho(f"Creating project: {project_name}", fg="green")
+    _create_project(project_name, project_description)
 
 
 @cli.command()
@@ -26,6 +56,7 @@ def ui():
 @cli.command()
 @click.option("--database-path", required=False, type=str, help="Path to existing database file.")
 def server(database_path: str):
+    """Run the tagger server"""
     engine = None
     """Run the tagger web server locally"""
     if not database_path:
@@ -59,7 +90,7 @@ def server(database_path: str):
     click.secho("Database schemas initialised", fg="green")
 
     # Now the database is loaded, we can run the server
-
+    app.run(debug=True)
 
 
 if __name__ == "__main__":
