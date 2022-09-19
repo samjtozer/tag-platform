@@ -11,11 +11,9 @@ from tagger.utils import (
     file_exists,
     folder_exists,
     create_init_config,
-    create_directory,
-    create_project as _create_project
+    create_directory
 )
-
-
+from tagger.project import create_project as _create_project
 
 
 @click.group()
